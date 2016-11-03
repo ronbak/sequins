@@ -243,9 +243,9 @@ func (p *partitions) getPeers(partition int) []string {
 
 	// Append old peers to peer list, in case of Zookeeper issues.
 	for _, oldPeer := range p.old {
-
 		peers = append(peers, oldPeer[partition]...)
 	}
+	
 	return peers
 }
 
