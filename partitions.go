@@ -132,10 +132,11 @@ func (p *partitions) updateRemotePartitions(nodes []string) {
 	}
 
 	// Keep track of old peers in case zookeeper goes away.
-	if len(p.old >= 1024) {
+	if len(p.old) >= 1024 {
 		p.old = p.old[:1024]
 	}
-	p.old = append(remote, p.old)
+	oldRemote := []map[int][]string{remote}
+	p.old = append(oldRemote, p.old...)
 
 	p.remote = remote
 	p.updateMissing()
@@ -242,7 +243,8 @@ func (p *partitions) getPeers(partition int) []string {
 
 	// Append old peers to peer list, in case of Zookeeper issues.
 	for _, oldPeer := range p.old {
-		peers = append(peers, oldPeer[partition])
+
+		peers = append(peers, oldPeer[partition]...)
 	}
 	return peers
 }
