@@ -25,6 +25,7 @@ type partitions struct {
 	selected        map[int]bool
 	local           map[int]bool
 	remote          map[int][]string
+	old             []map[int][]string
 	numMissing      int
 	ready           chan bool
 	readyClosed     bool
@@ -44,6 +45,7 @@ func watchPartitions(zkWatcher *zkWatcher, peers *peers, db, version string, num
 		replication:   replication,
 		local:         make(map[int]bool),
 		remote:        make(map[int][]string),
+		old:           make([]map[int][]string, 1024),
 		ready:         make(chan bool),
 	}
 
@@ -128,6 +130,12 @@ func (p *partitions) updateRemotePartitions(nodes []string) {
 			remote[partition] = append(remote[partition], host)
 		}
 	}
+
+	// Keep track of old peers in case zookeeper goes away.
+	if len(p.old >= 1024) {
+		p.old = p.old[:1024]
+	}
+	p.old = append(remote, p.old)
 
 	p.remote = remote
 	p.updateMissing()
@@ -231,6 +239,11 @@ func (p *partitions) getPeers(partition int) []string {
 
 	peers := make([]string, len(p.remote[partition]))
 	copy(peers, p.remote[partition])
+
+	// Append old peers to peer list, in case of Zookeeper issues.
+	for _, oldPeer := range p.old {
+		peers = append(peers, oldPeer[partition])
+	}
 	return peers
 }
 
